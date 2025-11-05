@@ -4,10 +4,14 @@
 <html>
 <body>
 <svg id="sri" width="1000" height="1000" xmlns="http://www.w3.org/2000/svg">
-   <circle id="circle" cx="200" cy="200" r="200" stroke="red" stroke-width="1" fill="none" />
-   <circle id="bindu" cx="200" cy="200" r="1" stroke="red" stroke-width="4" fill="none" />
+   <circle id="circle" cx="" cy="" r=""  />
+   <circle id="bindu" cx="" cy="" r=""  />
+   <!-- set the values in code below line 'const r=100,cx=150,cy=150;''-->
    Sorry, your browser does not support inline SVG.
 <script>
+const r=100,cx=150,cy=150;
+const default_style = "stroke:red;stroke-width:1;fill:none"
+
 function getInfiniteLineIntersection(p1, p2, p3, p4) {
   
     [p1, p2, p3, p4].forEach((pt, idx) => {
@@ -224,16 +228,19 @@ function _(id){
 //5 pointing downwards called here as d1,d2,d3,d4,d5
 //The triangles are constructed in pairs starting from the center
 
-const r=100,cx=150,cy=150;
 const yantra = document.getElementById('sri');
 const circle = document.getElementById('circle');
 const bindu =_("bindu");
 circle.setAttribute("r",r);
 circle.setAttribute("cx",cx);
 circle.setAttribute("cy",cy);
+circle.setAttribute("style",default_style);
+
 bindu.setAttribute("r",1);
 bindu.setAttribute("cx",cx);
 bindu.setAttribute("cy",cy);
+bindu.setAttribute("style","stroke:red;stroke-width:4;fill:none");
+
 // Example usage: Point on circle 
 const centerX = cx;
 const centerY = cy;
