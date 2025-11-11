@@ -1,0 +1,403 @@
+
+<svg id="suryarasi" width="500" height="500" xmlns="http://www.w3.org/2000/svg">
+<circle id="circle" cx="250" cy="250" r="200" stroke="red" stroke-width="0" fill="none" />
+<script>
+//All functions are defined here 
+
+//Functions copied from sricakra.html
+const r=100,cx=150,cy=150;
+const default_style = "stroke:red;stroke-width:1;fill:none"
+const svgns = "http://www.w3.org/2000/svg";
+
+function getInfiniteLineIntersection(p1, p2, p3, p4) {
+  
+    [p1, p2, p3, p4].forEach((pt, idx) => {
+        if (pt.x < 0 || pt.y < 0) {
+            console.warn(`Input point ${idx + 1} is outside positive quadrant: (${pt.x}, ${pt.y})`);
+        }
+    });
+
+  const dx1 = p2.x - p1.x;
+  const dy1 = p2.y - p1.y;
+  const dx2 = p4.x - p3.x;
+  const dy2 = p4.y - p3.y;
+
+  const D = dx1 * dy2 - dy1 * dx2;
+
+  if (D === 0) {
+    return null; // Parallel or collinear
+  }
+
+  const t = ((p3.x - p1.x) * dy2 - (p3.y - p1.y) * dx2) / D;
+
+  return {
+    x: p1.x + t * dx1,
+    y: p1.y + t * dy1
+  };
+}
+function getInfiniteLineIntersectionWrapper(line1, line2) {
+    return getInfiniteLineIntersection(line1.p1, line1.p2, line2.p1, line2.p2);
+}
+//The Yantra is symmetric about center point cx,cy on Y axis
+//So any point can be reflected about this axis to get right side side point
+//The caller should use the returned refected point the value passed is not mutated
+function reflectPointAboutYAxis(point,cx){
+    const reflectedPoint={x:0,y:0};
+    reflectedPoint.x=cx+(cx-point.x);
+    reflectedPoint.y=point.y;
+    return reflectedPoint;
+}
+
+PointType = {x:0,y:0};
+function PointSVG(x,y,style= "stroke:red;stroke-width:2;fill:none"){
+   const P1 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+   P1.setAttribute("cx", x);
+   P1.setAttribute("cy", y);
+   P1.setAttribute("r", "1");
+   P1.setAttribute("style",style);
+   return P1;
+}
+function pPointSVG(p,style= "stroke:red;stroke-width:2;fill:none"){
+   return PointSVG(p.x,p.y,style);
+}
+function Line(p1,p2,style="stroke:red;stroke-width:2;fill:none"){
+   const P1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+   P1.setAttribute("x1", p1.x);
+   P1.setAttribute("y1", p1.y);
+   P1.setAttribute("x2", p2.x);
+   P1.setAttribute("y2", p2.y);
+   P1.setAttribute("style", style);
+   return P1;
+}
+LineType={p1:{...PointType},p2:{...PointType}}
+function lLine(linetype,style="stroke:red;stroke-width:2;fill:none"){
+   return Line(linetype.p1,linetype.p2,style);
+}
+function getLineTypefromLineSVG(lineSVG){
+    return {p1:{x:1*lineSVG.getAttribute("x1"),y:1*lineSVG.getAttribute("y1")},
+            p2:{x:1*lineSVG.getAttribute("x2"),y:1*lineSVG.getAttribute("y2")}};
+}
+TriangleType={p1:{...PointType},p2:{...PointType},p3:{...PointType}}
+function Triangle(triangletype,style="stroke:red;stroke-width:1;fill:none"){
+   const triangle = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+   const pointsStr = `${triangletype.p1.x},${triangletype.p1.y} ${triangletype.p2.x},${triangletype.p2.y} ${triangletype.p3.x},${triangletype.p3.y}`;
+   triangle.setAttribute("points", pointsStr);
+   triangle.setAttribute("style", style);
+   return triangle;
+}
+
+function sortTrianglePointsByX(triangle) {
+    const points = [triangle.p1, triangle.p2, triangle.p3];
+    points.sort((a, b) => a.x - b.x); // Sort left to right
+    // Mutate the original triangle object
+    triangle.p1 = points[0];
+    triangle.p2 = points[1];
+    triangle.p3 = points[2];
+    return triangle; // Return the same object for convenience
+}
+//Function to get Left Line, Right Line, Left point, Right Point or Tip for a given triangle
+//First sort the given triangle points by x coordinate
+const LeftLine=0, RightLine=1, LeftPoint=2, RightPoint=3, Tip=4;
+function getTriangleComponent(triangle,componentType){
+    sortTrianglePointsByX(triangle);
+    switch(componentType){
+        case LeftLine:
+            return {p1:{...triangle.p1},p2:{...triangle.p2}};
+        case RightLine:
+            return {p1:{...triangle.p2},p2:{...triangle.p3}};
+        case LeftPoint:
+            return {...triangle.p1};
+        case RightPoint:
+            return {...triangle.p3};
+        case Tip:
+            return {...triangle.p2};
+        default:
+            return null;
+    }
+}
+
+// Append the new line to the SVG container
+//function VectorPoint()
+function getPointOnCircle(centerX, centerY, radius, angleInDegrees) {
+  const angleInRadians = angleInDegrees * (Math.PI / 180);
+
+  const x = centerX + radius * Math.cos(angleInRadians);
+  const y = centerY + radius * Math.sin(angleInRadians);
+
+  return { x: x, y: y };
+}
+//Get a point x degrees from a point(x,y) on circle with center cx,cy and radius r. return the point {x:,y:}
+function getPointOnCircleFromPoint(x,y,cx,cy,r,angleInDegrees){
+    const angleInRadians = angleInDegrees * (Math.PI / 180);
+    const currentAngle = Math.atan2(y - cy, x - cx);
+    console.log("point on circle (x,y):",x,y);
+    console.log("circle center (cx,cy):",cx,cy);
+    console.log("circle radius r:",r);
+    //print values to atan2
+    console.log("atan2 inputs (y-cy,x-cx):",y - cy,x - cx);
+    console.log("currentAngle (degrees):",currentAngle * (180 / Math.PI));
+    const newAngle = currentAngle + angleInRadians;
+    console.log("newAngle (degrees):",newAngle * (180 / Math.PI));
+    const newX = cx + r * Math.cos(newAngle);
+    const newY = cy + r * Math.sin(newAngle);
+    return { x: newX, y: newY };
+}
+//const CircleType={circleCenter:{x:0,y:0},circleRadius:0};
+//Wrapper for getPointOnCircleFromPoint
+function getPointOnCircleFromPointWrapper(point,circle,angleInDegrees){
+    return getPointOnCircleFromPoint(point.x,point.y,circle.circleCenter.x,circle.circleCenter.y,circle.circleRadius,angleInDegrees);
+}
+
+function getLineCircleIntersections(lineP1, lineP2, circleCenter, circleRadius) {
+    const x1 = lineP1.x;
+    const y1 = lineP1.y;
+    const x2 = lineP2.x;
+    const y2 = lineP2.y;
+
+    const cx = circleCenter.x;
+    const cy = circleCenter.y;
+    const r = circleRadius;
+    
+
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+
+    const A = dx * dx + dy * dy;
+    const B = 2 * (dx * (x1 - cx) + dy * (y1 - cy));
+    const C = (x1 - cx) * (x1 - cx) + (y1 - cy) * (y1 - cy) - r * r;
+
+    const discriminant = B * B - 4 * A * C;
+
+    const intersectionPoints = [];
+
+    if (discriminant < 0) {
+        return intersectionPoints; // No intersection
+    } else if (discriminant === 0) {
+        const t = -B / (2 * A);
+        intersectionPoints.push({ x: x1 + t * dx, y: y1 + t * dy });
+    } else {
+        const sqrtDisc = Math.sqrt(discriminant);
+        const t1 = (-B + sqrtDisc) / (2 * A);
+        const t2 = (-B - sqrtDisc) / (2 * A);
+        intersectionPoints.push({ x: x1 + t1 * dx, y: y1 + t1 * dy });
+        intersectionPoints.push({ x: x1 + t2 * dx, y: y1 + t2 * dy });
+    }
+
+    return intersectionPoints; // ✅ No filtering for infinite line
+}
+
+const circleType={ circleCenter: {x:0,y:0}, circleRadius:0};
+
+
+function getLineCircleIntersectionsWrapper(lineType, circle){
+    return getLineCircleIntersections(lineType.p1,lineType.p2,circle.circleCenter,circle.circleRadius);
+}
+function swapPointsIfNeeded(p1, p2) {
+    if (p1.x > p2.x) {
+        const tempX = p1.x;
+        const tempY = p1.y;
+        p1.x = p2.x;
+        p1.y = p2.y;
+        p2.x = tempX;
+        p2.y = tempY;
+    }
+    return [p1, p2]; // Optional
+}
+
+//Swap points of lineType if needed to make p1 leftmost
+function swapLinePointsIfNeeded(lineType){
+    if(lineType.p1.x>lineType.p2.x){
+        const temp={...lineType.p1};
+        lineType.p1={...lineType.p2};
+        lineType.p2={...temp};
+    }
+    return lineType;
+}
+function _(id){
+  return document.getElementById(id);
+}
+// Locally created functions for Surya Rasi Chakra start here
+const SquareType={center:{...PointType},side:0};
+function drawSquare(squareType,style="stroke:red;stroke-width:1;fill:none"){
+   const square = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+   const half_side = squareType.side/2;
+   const x = squareType.center.x - half_side;
+   const y = squareType.center.y - half_side;
+   square.setAttribute("x", x);
+   square.setAttribute("y", y);
+   square.setAttribute("width", squareType.side);
+   square.setAttribute("height", squareType.side);
+   square.setAttribute("style", style);
+   return square;
+}
+
+//function to get various properties of square like TopLeft, TopRight, BottomLeft, BottomRight, TopLine, BottomLine, LeftLine, RightLine, Center, DownDiagonalLine, UpDiagonalLine
+const SqTopLeft=0, SqTopRight=1, SqBottomLeft=2, SqBottomRight=3, SqTopLine=4, SqBottomLine=5, SqLeftLine=6, SqRightLine=7, SqCenter=8, SqDownDiagonalLine=9, SqUpDiagonalLine=10;
+
+function getSquareComponent(squareType,componentType){
+    const half_side = squareType.side/2;
+    switch(componentType){
+        case SqTopLeft:
+            return {x:squareType.center.x - half_side, y:squareType.center.y - half_side};
+        case SqTopRight:
+            return {x:squareType.center.x + half_side, y:squareType.center.y - half_side};
+        case SqBottomLeft:
+            return {x:squareType.center.x - half_side, y:squareType.center.y + half_side};
+        case SqBottomRight:
+            return {x:squareType.center.x + half_side, y:squareType.center.y + half_side};
+        case SqTopLine:
+            return {p1:{x:squareType.center.x - half_side, y:squareType.center.y - half_side}, p2:{x:squareType.center.x + half_side, y:squareType.center.y - half_side}};
+        case SqBottomLine:
+            return {p1:{x:squareType.center.x - half_side, y:squareType.center.y + half_side}, p2:{x:squareType.center.x + half_side, y:squareType.center.y + half_side}};
+        case SqLeftLine:
+            return {p1:{x:squareType.center.x - half_side, y:squareType.center.y - half_side}, p2:{x:squareType.center.x - half_side, y:squareType.center.y + half_side}};
+        case SqRightLine:
+            return {p1:{x:squareType.center.x + half_side, y:squareType.center.y - half_side}, p2:{x:squareType.center.x + half_side, y:squareType.center.y + half_side}};
+        case SqCenter:
+            return {...squareType.center};
+        case SqDownDiagonalLine:
+            return {p1:{x:squareType.center.x - half_side, y:squareType.center.y - half_side}, p2:{x:squareType.center.x + half_side, y:squareType.center.y + half_side}};
+        case SqUpDiagonalLine:
+            return {p1:{x:squareType.center.x - half_side, y:squareType.center.y + half_side}, p2:{x:squareType.center.x + half_side, y:squareType.center.y - half_side}};
+        default:
+            return null;
+    }
+}
+function truncateTextInRect(textElement, textString, maxWidth) {
+    // Set the full text first to measure it
+    textElement.textContent = textString;
+    
+    // Check if the text overflows using getComputedTextLength()
+    if (textElement.getComputedTextLength() > maxWidth) {
+        let text = textString;
+        // Loop and slice the text until it fits, adding "..."
+        while (textElement.getComputedTextLength() > maxWidth) {
+            text = text.slice(0, -4) + "..."; // Slice off characters and add "..."
+            textElement.textContent = text;
+        }
+    }
+}
+//Write Text on a given Line if the Line is slanted write the text slanted to
+function writeTextOnLine(lineType, textString, maxWidth=100, style="font-size:12px;fill:black"){
+    const textElement = document.createElementNS(svgns, "text");
+    //Calculate mid point of line
+    const midX = (lineType.p1.x + lineType.p2.x) / 2;
+    const midY = (lineType.p1.y + lineType.p2.y) / 2;
+    textElement.setAttribute("x", midX);
+    textElement.setAttribute("y", midY);
+    textElement.setAttribute("style", style);
+    //Calculate angle of line in degrees
+    const angleInRadians = Math.atan2(lineType.p2.y - lineType.p1.y, lineType.p2.x - lineType.p1.x);
+    const angleInDegrees = angleInRadians * (180 / Math.PI);
+    //Set transform attribute to rotate the text around mid point
+    textElement.setAttribute("transform", `rotate(${angleInDegrees}, ${midX}, ${midY})`);
+    //Truncate text if it exceeds maxWidth
+    truncateTextInRect(textElement, textString, maxWidth);
+    textElement.textContent = textString;
+    return textElement;
+}
+
+//Find distance between two points
+function distanceBetweenPoints(p1,p2){
+    return Math.sqrt((p2.x - p1.x)**2 + (p2.y - p1.y)**2);
+}
+//Function find length of a lineType
+function lengthOfLine(lineType){
+    return distanceBetweenPoints(lineType.p1,lineType.p2);
+}
+//Function to degree to radian
+function degreesToRadians(degrees){
+    return degrees * (Math.PI / 180);
+}
+
+//Till Here are all functions
+
+function main() {
+    const rashiNames = ["Mesha","Vrishabha","Mithuna","Karka","Simha","Kanya","Tula","Vrishchika","Dhanus","Makara","Kumbha","Meena"];
+    const r=1*document.getElementById("circle").getAttribute("r");
+    const cx=1*document.getElementById("circle").getAttribute("cx");
+    const cy=1*document.getElementById("circle").getAttribute("cy");
+    const rasicircle = document.getElementById("circle");
+    //Get the whole SVG elemenrt and store as eastchart
+    const eastchart = document.getElementById("suryarasi");
+    //Various points on circle at 30 degrees interval started from 15 degrees point.
+    const pointsOnCircle = [];
+    for(let angle=15,i=0; angle<360; angle+=30,--i){
+        const point = getPointOnCircle(cx, cy, r, angle);
+        //Assing point name started 0 with Dhanus at 0 index and go in reverse order
+        point.rashiName = rashiNames[(i+9+12)%12]; 
+        pointsOnCircle.push(point);
+    }
+
+    // Draw Big Square at spokes intersection points of the circle
+    //Draw square around the circle
+    const bigSquare = {center:{x:cx,y:cy},side:2*(pointsOnCircle[0].x - cx)};
+    eastchart.appendChild(drawSquare(bigSquare));
+
+    //Call line from 2 to 9 as MeshaVrishchikaLineSVG 
+    const MeshaVrishchikaLineSVG = Line(pointsOnCircle[2],pointsOnCircle[9]);
+    eastchart.appendChild(MeshaVrishchikaLineSVG );
+    //MeshaPoint is intersection of above lone with bigSquare SqTopLine
+    const MeshaPoint =getInfiniteLineIntersectionWrapper (getLineTypefromLineSVG(MeshaVrishchikaLineSVG ), getSquareComponent(bigSquare,SqTopLine));
+    //Draw MeshaPoint
+    //Call 8 to 3 as VrishabhaTulaLineSVG
+    const VrishabhaTulaLineSVG = Line(pointsOnCircle[8],pointsOnCircle[3]);
+    eastchart.appendChild(VrishabhaTulaLineSVG);
+    //VrishabhaPoint is intersection of above line with bigSquare SqTopLine
+    const VrishabhaPoint =getInfiniteLineIntersectionWrapper (getLineTypefromLineSVG(VrishabhaTulaLineSVG), getSquareComponent(bigSquare,SqTopLine));
+    //Draw VrishabhaPoint
+    // 6 to 11 is KarkaKumbhaLineSVG
+    const KarkaKumbhaLineSVG = Line(pointsOnCircle[6],pointsOnCircle[11]);
+    eastchart.appendChild(KarkaKumbhaLineSVG);
+    // 5 to 0 as SimhaMakaraLine
+    const SimhaMakaraLine = Line(pointsOnCircle[5],pointsOnCircle[0]);
+    eastchart.appendChild(SimhaMakaraLine);
+    //Get interectionpoint using above  VrishabhaTulaLineSVG and KarkaKumbhaLineSVG
+    const VrishabhaMithunaPoint = getInfiniteLineIntersectionWrapper(getLineTypefromLineSVG(VrishabhaTulaLineSVG),getLineTypefromLineSVG(KarkaKumbhaLineSVG));
+    //draw line from MithunaPoint to VrishabhaMithunaPoint call it VrishabhaMithunaLine
+    var MithunaPoint = pointsOnCircle.find(item=>item.rashiName==="Mithuna");
+    var VrishabhaMithunaCorner=getSquareComponent(bigSquare,SqTopLeft);
+    var VrishabhaMithunaLine ={p1:{...VrishabhaMithunaCorner}, p2:{x:VrishabhaMithunaPoint.x,y:VrishabhaMithunaPoint.y}};
+    eastchart.appendChild(lLine(VrishabhaMithunaLine));
+
+    //VrishabhaSqPoint is intersection of above line with bigSquare SqTopLine
+//    VrishabhaTulaLineType= getLineTypefromLineSVG(VrishabhaTulaLineSVG);
+    //const VrishabhaSqPoint =getInfiniteLineIntersectionWrapper (VrishabhaTulaLineType, getSquareComponent(bigSquare,SqLeftLine));
+    //Draw VrishabhaSqPoint
+    //Now draw line from VrishabhaStartLine from VrishabhaSqPoint to VrishabhaMithunaCorner
+  //  var VrishabhaStartLine ={p1:{...VrishabhaSqPoint}, p2:{...VrishabhaMithunaCorner}};
+
+    //find length of line VrishabhaStartLine and write on it
+   // var l = lengthOfLine(VrishabhaStartLine);
+    //eastchart.appendChild(  writeTextOnLine(VrishabhaStartLine,l.toFixed(2),80))   
+    var l=lengthOfLine(VrishabhaMithunaLine);
+    eastchart.appendChild(  writeTextOnLine(VrishabhaMithunaLine,l.toFixed(2),80))
+
+    //Now to Drawn SimhaKanyaLine from SimhaKanyaPoint to BottomLeft corner of bigSquare
+    const SimhaKanyaPoint = getInfiniteLineIntersectionWrapper(getLineTypefromLineSVG(VrishabhaTulaLineSVG),getLineTypefromLineSVG(SimhaMakaraLine));
+    var SimhaKanyaCorner=getSquareComponent(bigSquare,SqBottomLeft);
+    var SimhaKanyaLine ={p1:{...SimhaKanyaCorner}, p2:{...SimhaKanyaPoint}};
+    eastchart.appendChild(lLine(SimhaKanyaLine));
+    
+    //Intersection of MeshaVrishchikaLineSVG and SimhaMakaraLine
+    const VrishchikaDhanurPoint = getInfiniteLineIntersectionWrapper(getLineTypefromLineSVG(MeshaVrishchikaLineSVG ),getLineTypefromLineSVG(SimhaMakaraLine));
+    //Draw VrishchikaDhanurLine from VrishchikaDhanurPoint to BottomRight corner of bigSquare
+    var VrishchikaDhanurCorner=getSquareComponent(bigSquare,SqBottomRight);
+    var VrishchikaDhanurLine ={p1:{...VrishchikaDhanurCorner}, p2:{...VrishchikaDhanurPoint}};
+    eastchart.appendChild(lLine(VrishchikaDhanurLine));
+
+
+    //Intersection of MeshaVrishchikaLineSVG and KarkaKumbhaLineSVG
+    const KumbhaMeshaPoint = getInfiniteLineIntersectionWrapper(getLineTypefromLineSVG(MeshaVrishchikaLineSVG ),getLineTypefromLineSVG(KarkaKumbhaLineSVG));
+    //Draw KumbhaMeshaLine from KumbhaMeshaPoint to TopRight corner of bigSquare
+    var KumbhaMeshaCorner=getSquareComponent(bigSquare,SqTopRight);
+    var KumbhaMeshaLine ={p1:{...KumbhaMeshaCorner}, p2:{...KumbhaMeshaPoint}};
+    eastchart.appendChild(lLine(KumbhaMeshaLine));
+
+}
+main();//Invoke main function
+console.log("Surya Rasi Chakra Drawn");
+
+</script>
+
+</svg>

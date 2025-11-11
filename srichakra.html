@@ -11,6 +11,7 @@
 <script>
 const r=100,cx=150,cy=150;
 const default_style = "stroke:red;stroke-width:1;fill:none"
+const svgns = "http://www.w3.org/2000/svg";
 
 function getInfiniteLineIntersection(p1, p2, p3, p4) {
   
@@ -115,8 +116,6 @@ function getTriangleComponent(triangle,componentType){
     }
 }
 
-
-
 // Append the new line to the SVG container
 //function VectorPoint()
 function getPointOnCircle(centerX, centerY, radius, angleInDegrees) {
@@ -219,9 +218,11 @@ function _(id){
   return document.getElementById(id);
 }
 
+
+function main()//Main function starts here
+{
 //   <circle id="circle" cx="200" cy="200" r="200" stroke="red" stroke-width="4" fill="none" />
 //   <circle id="bindu" cx="200" cy="200" r="1" stroke="red" stroke-width="4" fill="none" />
-
 //Sri Chakra Construction
 //It has 9 interlocking triangles
 //4 pointing upwards called here as u1,u2,u3,u4
@@ -563,9 +564,9 @@ yantra.appendChild(Triangle(D5));
 //Drawing Outer Bhupura
 //https://youtu.be/0eTVHoxqZYM?t=62
 
+}//End of main function
 
-
-
+main();//Invoke main function
 //debugger;
 </script>
 
