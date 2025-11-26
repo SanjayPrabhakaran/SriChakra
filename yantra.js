@@ -1,0 +1,643 @@
+console.log("Loading yantra.js");
+var r = 100, cx = 150, cy = 150;
+var default_style = "stroke:red;stroke-width:1;fill:none"
+var svgns = "http://www.w3.org/2000/svg";
+//console.log(r, cx, cy, default_style, svgns);
+function getInfiniteLineIntersection(p1, p2, p3, p4) {
+
+    [p1, p2, p3, p4].forEach((pt, idx) => {
+        if (pt.x < 0 || pt.y < 0) {
+            console.warn(`Input point ${idx + 1} is outside positive quadrant: (${pt.x}, ${pt.y})`);
+        }
+    });
+
+    const dx1 = p2.x - p1.x;
+    const dy1 = p2.y - p1.y;
+    const dx2 = p4.x - p3.x;
+    const dy2 = p4.y - p3.y;
+
+    const D = dx1 * dy2 - dy1 * dx2;
+
+    if (D === 0) {
+        return null; // Parallel or collinear
+    }
+
+    const t = ((p3.x - p1.x) * dy2 - (p3.y - p1.y) * dx2) / D;
+
+    return {
+        x: p1.x + t * dx1,
+        y: p1.y + t * dy1
+    };
+}
+function getInfiniteLineIntersectionWrapper(line1, line2) {
+    return getInfiniteLineIntersection(line1.p1, line1.p2, line2.p1, line2.p2);
+}
+//The Yantra is symmetric about center point cx,cy on Y axis
+//So any point can be reflected about this axis to get right side side point
+//The caller should use the returned refected point the value passed is not mutated
+function reflectPointAboutYAxis(point, cx) {
+    const reflectedPoint = { x: 0, y: 0 };
+    reflectedPoint.x = cx + (cx - point.x);
+    reflectedPoint.y = point.y;
+    return reflectedPoint;
+}
+
+PointType = { x: 0, y: 0 };
+function PointSVG(x, y, style = "stroke:red;stroke-width:2;fill:none") {
+    const P1 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    P1.setAttribute("cx", x);
+    P1.setAttribute("cy", y);
+    P1.setAttribute("r", "1");
+    P1.setAttribute("style", style);
+    return P1;
+}
+function pPointSVG(p, colour = "red") {
+    return PointSVG(p.x, p.y, "stroke:" + colour + ";stroke-width:2;fill:none");
+}
+function Line(p1, p2, style = "stroke:red;stroke-width:2;fill:none") {
+    const P1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    P1.setAttribute("x1", p1.x);
+    P1.setAttribute("y1", p1.y);
+    P1.setAttribute("x2", p2.x);
+    P1.setAttribute("y2", p2.y);
+    P1.setAttribute("style", style);
+    return P1;
+}
+LineType = { p1: { ...PointType }, p2: { ...PointType } }
+function lLine(linetype, style = "stroke:red;stroke-width:2;fill:none") {
+    return Line(linetype.p1, linetype.p2, style);
+}
+TriangleType = { p1: { ...PointType }, p2: { ...PointType }, p3: { ...PointType } }
+function Triangle(triangletype, style = "stroke:red;stroke-width:1;fill:none") {
+    const triangle = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+    const pointsStr = `${triangletype.p1.x},${triangletype.p1.y} ${triangletype.p2.x},${triangletype.p2.y} ${triangletype.p3.x},${triangletype.p3.y}`;
+    triangle.setAttribute("points", pointsStr);
+    triangle.setAttribute("style", style);
+    return triangle;
+}
+
+function sortTrianglePointsByX(triangle) {
+    const points = [triangle.p1, triangle.p2, triangle.p3];
+    points.sort((a, b) => a.x - b.x); // Sort left to right
+    // Mutate the original triangle object
+    triangle.p1 = points[0];
+    triangle.p2 = points[1];
+    triangle.p3 = points[2];
+    return triangle; // Return the same object for convenience
+}
+//Function to get Left Line, Right Line, Left point, Right Point or Tip for a given triangle
+//First sort the given triangle points by x coordinate
+const LeftLine = 0, RightLine = 1, LeftPoint = 2, RightPoint = 3, Tip = 4;
+function getTriangleComponent(triangle, componentType) {
+    sortTrianglePointsByX(triangle);
+    switch (componentType) {
+        case LeftLine:
+            return { p1: { ...triangle.p1 }, p2: { ...triangle.p2 } };
+        case RightLine:
+            return { p1: { ...triangle.p2 }, p2: { ...triangle.p3 } };
+        case LeftPoint:
+            return { ...triangle.p1 };
+        case RightPoint:
+            return { ...triangle.p3 };
+        case Tip:
+            return { ...triangle.p2 };
+        default:
+            return null;
+    }
+}
+
+// Append the new line to the SVG container
+//function VectorPoint()
+function getPointOnCircle(centerX, centerY, radius, angleInDegrees) {
+    const angleInRadians = angleInDegrees * (Math.PI / 180);
+
+    const x = centerX + radius * Math.cos(angleInRadians);
+    const y = centerY + radius * Math.sin(angleInRadians);
+
+    return { x: x, y: y };//Returns Point Type
+}
+const CircleType = { circleCenter: { x: 0, y: 0 }, circleRadius: 0 };
+
+function getPointOnCircleFromPointWrapper(point, circle, angleInDegrees) {
+    return getPointOnCircleFromPoint(point.x, point.y, circle.circleCenter.x, circle.circleCenter.y, circle.circleRadius, angleInDegrees);
+}
+
+// get point on circle with circle wrapper
+function getPointOnCircleWrapper(circle, angleInDegrees) {
+    return getPointOnCircle(circle.circleCenter.x, circle.circleCenter.y, circle.circleRadius, angleInDegrees);
+}
+
+
+//Get a point x degrees from a point(x,y) on circle with center cx,cy and radius r. return the point {x:,y:}
+
+function getPointOnCircleFromPoint(x, y, cx, cy, r, angleInDegrees) {
+    const angleInRadians = angleInDegrees * (Math.PI / 180);
+    const currentAngle = Math.atan2(y - cy, x - cx);
+    console.log("point on circle (x,y):", x, y);
+    console.log("circle center (cx,cy):", cx, cy);
+    console.log("circle radius r:", r);
+    //print values to atan2
+    console.log("atan2 inputs (y-cy,x-cx):", y - cy, x - cx);
+    console.log("currentAngle (degrees):", currentAngle * (180 / Math.PI));
+    const newAngle = currentAngle + angleInRadians;
+    console.log("newAngle (degrees):", newAngle * (180 / Math.PI));
+    const newX = cx + r * Math.cos(newAngle);
+    const newY = cy + r * Math.sin(newAngle);
+    return { x: newX, y: newY };
+}
+//Wrapper for getPointOnCircleFromPoint
+function getPointOnCircleFromPointWrapper(point, circle, angleInDegrees) {
+    return getPointOnCircleFromPoint(point.x, point.y, circle.circleCenter.x, circle.circleCenter.y, circle.circleRadius, angleInDegrees);
+}
+
+function getLineCircleIntersections(lineP1, lineP2, circleCenter, circleRadius) {
+    const x1 = lineP1.x;
+    const y1 = lineP1.y;
+    const x2 = lineP2.x;
+    const y2 = lineP2.y;
+
+    const cx = circleCenter.x;
+    const cy = circleCenter.y;
+    const r = circleRadius;
+
+
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+
+    const A = dx * dx + dy * dy;
+    const B = 2 * (dx * (x1 - cx) + dy * (y1 - cy));
+    const C = (x1 - cx) * (x1 - cx) + (y1 - cy) * (y1 - cy) - r * r;
+
+    const discriminant = B * B - 4 * A * C;
+
+    const intersectionPoints = [];
+
+    if (discriminant < 0) {
+        return intersectionPoints; // No intersection
+    } else if (discriminant === 0) {
+        const t = -B / (2 * A);
+        intersectionPoints.push({ x: x1 + t * dx, y: y1 + t * dy });
+    } else {
+        const sqrtDisc = Math.sqrt(discriminant);
+        const t1 = (-B + sqrtDisc) / (2 * A);
+        const t2 = (-B - sqrtDisc) / (2 * A);
+        intersectionPoints.push({ x: x1 + t1 * dx, y: y1 + t1 * dy });
+        intersectionPoints.push({ x: x1 + t2 * dx, y: y1 + t2 * dy });
+    }
+
+    return intersectionPoints; // ✅ No filtering for infinite line
+}
+
+
+
+function getLineCircleIntersectionsWrapper(lineType, circle) {
+    return getLineCircleIntersections(lineType.p1, lineType.p2, circle.circleCenter, circle.circleRadius);
+}
+
+function swapPointsIfNeeded(p1, p2) {
+    if (p1.x > p2.x) {
+        const tempX = p1.x;
+        const tempY = p1.y;
+        p1.x = p2.x;
+        p1.y = p2.y;
+        p2.x = tempX;
+        p2.y = tempY;
+    }
+    return [p1, p2]; // Optional
+}
+
+//Swap points of lineType if needed to make p1 leftmost
+function swapLinePointsIfNeeded(lineType) {
+    if (lineType.p1.x > lineType.p2.x) {
+        const temp = { ...lineType.p1 };
+        lineType.p1 = { ...lineType.p2 };
+        lineType.p2 = { ...temp };
+    }
+    return lineType;
+}
+function _(id) {
+    return document.getElementById(id);
+}
+
+function SriChakraTrikona(cx, cy, r, default_style = "stroke:red;stroke-width:1;fill:none")//Main function starts here
+{
+    //   <circle id="circle" cx="200" cy="200" r="200" stroke="red" stroke-width="4" fill="none" />
+    //   <circle id="bindu" cx="200" cy="200" r="1" stroke="red" stroke-width="4" fill="none" />
+    //Sri Chakra Construction
+    //It has 9 interlocking triangles
+    //4 pointing upwards called here as u1,u2,u3,u4
+    //5 pointing downwards called here as d1,d2,d3,d4,d5
+    //The triangles are constructed in pairs starting from the center
+
+    const yantra = document.getElementById('sri');
+    const circle = document.getElementById('circle');
+    const bindu = document.getElementById("bindu");
+    circle.setAttribute("r", r);
+    circle.setAttribute("cx", cx);
+    circle.setAttribute("cy", cy);
+    circle.setAttribute("style", default_style);
+
+    bindu.setAttribute("r", 1);
+    bindu.setAttribute("cx", cx);
+    bindu.setAttribute("cy", cy);
+    bindu.setAttribute("style", "stroke:red;stroke-width:4;fill:none");
+
+    // Example usage: Point on circle 
+    const centerX = cx;
+    const centerY = cy;
+    const radius = r;
+    CircleType.circleCenter = { x: centerX, y: centerY };
+    CircleType.circleRadius = radius;
+    var center = { x: cx, y: cy };
+    var P_right = { x: (cx + r), y: cy };
+    var P_top = { x: (cx), y: (cy - r) };
+    var P_left = { x: (cx - r), y: (cy) };
+    var P_bottom = { x: (cx), y: (cy + r) };
+    var P1 = getPointOnCircle(centerX, centerY, radius, -30);
+    var P2 = getPointOnCircle(centerX, centerY, radius, -150);
+    var P3 = getPointOnCircle(centerX, centerY, radius, 150);
+    var P4 = getPointOnCircle(centerX, centerY, radius, 30);
+    var thin = "stroke:blue;stroke-width:1;stroke-dasharray:1 5;fill:none"
+    d1_i1 = getInfiniteLineIntersection(P_bottom, P2, P_left, P_top);
+    //alert(JSON.stringify(d1_i1));
+    d1_i2 = getInfiniteLineIntersection(P_bottom, P1, P_right, P_top);
+    // Example usage: Circle and line
+    const lineStart = d1_i1;//{ x: 0, y: 0 };
+    const lineEnd = d1_i2;//{ x: 100, y: 100 };
+    const circleCenter = { x: cx, y: cy };
+    const circleRadius = r;
+
+    const d1_circleIntersections = getLineCircleIntersections(lineStart, lineEnd, circleCenter, circleRadius);
+
+    // Down 1 triangle
+    const d1 = { ...TriangleType };
+    const d1_base = { ...LineType };
+    d1_base.p1 = { ...d1_circleIntersections[0] };
+    d1_base.p2 = { ...d1_circleIntersections[1] };
+    swapLinePointsIfNeeded(d1_base);
+    //D1 Triangle points sorted from left to right
+    d1.p1 = { ...d1_base.p1 };
+    d1.p2 = { ...P_bottom };
+    d1.p3 = { ...d1_base.p2 };
+    if (d1_circleIntersections[0].x > d1_circleIntersections[1].x) {
+        //swap to make sure first point is leftmost
+        const temp = d1_circleIntersections[0];
+        d1_circleIntersections[0] = d1_circleIntersections[1];
+        d1_circleIntersections[1] = temp;
+    }
+    d1_leftline = { ...LineType };
+    d1_leftline = { p1: { ...d1_circleIntersections[0] }, p2: { ...P_bottom } };
+    d1_rightline = { ...LineType };
+    d1_rightline = { p1: { ...d1_circleIntersections[1] }, p2: { ...P_bottom } };
+    yantra.appendChild(Triangle(d1));
+
+    //Now construct upper triangle u1
+    u1_markertip = { x: cx, y: d1_circleIntersections[0].y };
+    u1_markerline1 = { ...LineType };
+    u1_markerline1.p1 = { ...P3 };
+    u1_markerline1.p2 = { ...u1_markertip };
+    u1_basemarkerpoint1 = getInfiniteLineIntersectionWrapper(u1_markerline1, d1_leftline);
+    u1_markerline2 = { ...LineType };
+    u1_markerline2.p1 = { ...P4 };
+    u1_markerline2.p2 = { ...u1_markertip };
+    u1_basemarkerpoint2 = getInfiniteLineIntersectionWrapper(u1_markerline2, d1_rightline);
+    u1_baselinemarker = { ...LineType };
+    u1_baselinemarker.p1 = { ...u1_basemarkerpoint1 };
+    u1_baselinemarker.p2 = { ...u1_basemarkerpoint2 };
+    u1_baseintersection = getLineCircleIntersectionsWrapper(u1_baselinemarker, CircleType);
+    u1_baseintersection = swapPointsIfNeeded(u1_baseintersection[0], u1_baseintersection[1]);
+    const u1_base = { ...LineType };
+    u1_base.p1 = { ...u1_baseintersection[0] };
+    u1_base.p2 = { ...u1_baseintersection[1] };
+    //sort u1_base points to make p1 leftmost
+    swapLinePointsIfNeeded(u1_base);
+    const u1_tip = { ...P_top };
+    u1_leftline = { ...LineType };
+    u1_leftline.p1 = { ...u1_base.p1 };
+    u1_leftline.p2 = { ...u1_tip };
+    //yantra.appendChild(lLine(u1_leftline));
+    u1_rightline = { ...LineType };
+    u1_rightline.p1 = { ...u1_base.p2 };
+    u1_rightline.p2 = { ...u1_tip };
+    const u1 = { ...TriangleType };
+    u1.p1 = { ...u1_base.p1 };
+    u1.p2 = { ...u1_tip };
+    u1.p3 = { ...u1_base.p2 };
+    console.log("u1 triangle points unsorted by x:", u1);
+    sortTrianglePointsByX(u1);
+    console.log("u1 triangle points sorted by x:", u1);
+    yantra.appendChild(Triangle(u1));
+
+    // Details of drawing from https://youtu.be/CoN54W5nLD4?t=240
+
+    //yantra.appendChild(pPointSVG(u1.p1,"stroke:green;stroke-width:10;fill:none"));
+    d3_leftmarkerpoint = getPointOnCircleFromPointWrapper(u1.p1, CircleType, 60);
+    //yantra.appendChild(pPointSVG(d3_leftmarkerpoint,"stroke:green;stroke-width:10;fill:none"));
+    const u2_tip = { ...{ PointType } };
+    u2_tip.x = centerX;
+    u2_tip.y = d3_leftmarkerpoint.y;
+    //yantra.appendChild(pPointSVG(u2_tip,"stroke:red;stroke-width:10;fill:none"));
+    d3_rightmarkerpoint = getPointOnCircleFromPointWrapper(u1.p3, CircleType, -60);
+    //yantra.appendChild(pPointSVG(d3_rightmarkerpoint,"stroke:green;stroke-width:10;fill:none"));
+    d1LeftAndU1BaseLineIntersection = getInfiniteLineIntersectionWrapper(d1_leftline, u1_base);
+    //yantra.appendChild(pPointSVG(d1LeftAndU1BaseLineIntersection,"stroke:purple;stroke-width:10;fill:none"));
+
+    //d3 base line is from d3 left marker point to d3 right marker point
+    var d3_basemarkerline = { ...LineType };
+    d3_basemarkerline.p1 = { ...d3_leftmarkerpoint };
+    d3_basemarkerline.p2 = { ...d3_rightmarkerpoint };
+    //yantra.appendChild(lLine(d3_basemarkerline,"stroke:gray;stroke-width:2;fill:none"));
+
+
+    u2_leftline = { ...LineType };
+    u2_leftline.p1 = { ...d1LeftAndU1BaseLineIntersection };
+    u2_leftline.p2 = { ...u2_tip };
+    //yantra.appendChild(lLine(u2_leftline,"stroke:orange;stroke-width:2;fill:none"));
+    u2_rightline = { ...LineType };
+    u2_rightline.p1 = { ...reflectPointAboutYAxis(d1LeftAndU1BaseLineIntersection, centerX) };
+    u2_rightline.p2 = { ...u2_tip };
+    //yantra.appendChild(lLine(u2_rightline,"stroke:orange;stroke-width:2 ;fill:none"));
+    // Details of drawing u2 from https://youtu.be/CoN54W5nLD4?t=300
+    u3_leftmarkerpoint = getPointOnCircleFromPointWrapper(d1.p1, CircleType, -60);
+    //yantra.appendChild(pPointSVG(u3_leftmarkerpoint,"stroke:blue;stroke-width:10;fill:none"));
+    const d2_tip = { ...{ PointType } };
+    d2_tip.x = centerX;
+    d2_tip.y = u3_leftmarkerpoint.y;
+    //yantra.appendChild(pPointSVG(d2_tip,"stroke:red;stroke-width:10;fill:none"));
+    u3_rightmarkerpoint = getPointOnCircleFromPointWrapper(d1.p3, CircleType, 60);
+    //yantra.appendChild(pPointSVG(u3_rightmarkerpoint,"stroke:blue;stroke-width:10;fill:none"));
+    u1LeftAndD1BaseLineIntersection = getInfiniteLineIntersectionWrapper(u1_leftline, d1_base);
+    //yantra.appendChild(pPointSVG(u1LeftAndD1BaseLineIntersection,"stroke:purple;stroke-width:10;fill:none"));
+
+    var u3_basemarkerline = { ...LineType };
+    u3_basemarkerline.p1 = { ...u3_leftmarkerpoint };
+    u3_basemarkerline.p2 = { ...u3_rightmarkerpoint };
+    //yantra.appendChild(lLine(u3_basemarkerline,"stroke:gray;stroke-width:2;fill:none"));
+
+
+
+    d2_leftline = { ...LineType };
+    d2_leftline.p1 = { ...u1LeftAndD1BaseLineIntersection };
+    d2_leftline.p2 = { ...d2_tip };
+    //yantra.appendChild(lLine(d2_leftline,"stroke:orange;stroke-width:2;fill:none"));
+    d2_rightline = { ...LineType };
+    d2_rightline.p1 = { ...reflectPointAboutYAxis(u1LeftAndD1BaseLineIntersection, centerX) };
+    d2_rightline.p2 = { ...d2_tip };
+    //yantra.appendChild(lLine(d2_rightline,"stroke:orange;stroke-width:2;fill:none"));
+
+
+    //D3 and U3 Triangles construction to be done
+    const U3_tip = { ...PointType };
+    U3_tip.x = centerX;
+    U3_tip.y = d1_base.p1.y;
+    //yantra.appendChild(pPointSVG(U3_tip,"stroke:red;stroke-width:10;fill:none"));
+    var U3_leftmarkerpoint;
+    U3_leftmarkerpoint = getInfiniteLineIntersectionWrapper(d2_leftline, u1_base);
+    //yantra.appendChild(pPointSVG(U3_leftmarkerpoint,"stroke:yellow;stroke-width:10;fill:none"));
+    const U3_leftline = { ...LineType };
+    U3_leftline.p1 = { ...U3_leftmarkerpoint };
+    U3_leftline.p2 = { ...U3_tip };
+    swapLinePointsIfNeeded(U3_leftline);
+    //yantra.appendChild(lLine(U3_leftline,"stroke:orange;stroke-width:2 ;fill:none"));
+
+    const U3_rightline = { ...LineType };
+    U3_rightline.p1 = { ...reflectPointAboutYAxis(U3_leftmarkerpoint, centerX) };
+    U3_rightline.p2 = { ...U3_tip };
+    swapLinePointsIfNeeded(U3_rightline);
+    //yantra.appendChild(lLine(U3_rightline,"stroke:orange;stroke-width:2 ;fill:none"));
+
+    u3_leftmarkerpoint = getInfiniteLineIntersectionWrapper(U3_leftline, u3_basemarkerline);
+    //yantra.appendChild(pPointSVG(u3_leftmarkerpoint,"stroke:yellow;stroke-width:10;fill:none"));
+    u3_rightmarkerpoint = reflectPointAboutYAxis(u3_leftmarkerpoint, centerX);
+    //yantra.appendChild(pPointSVG(u3_rightmarkerpoint,"stroke:yellow;stroke-width :10;fill:none"));
+
+    const u3 = { ...TriangleType };
+    u3.p1 = { ...u3_leftmarkerpoint };
+    u3.p2 = { ...U3_tip };
+    u3.p3 = { ...u3_rightmarkerpoint };
+    sortTrianglePointsByX(u3);
+    yantra.appendChild(Triangle(u3));
+
+    var u2_base_markerline = { ...LineType };
+    u2_base_markerline.p1 = getInfiniteLineIntersectionWrapper(d1_leftline, U3_leftline);
+    u2_base_markerline.p2 = getInfiniteLineIntersectionWrapper(d1_rightline, U3_rightline);
+    //yantra.appendChild(lLine(u2_base_markerline,"stroke:purple;stroke-width:2;fill:none"));
+
+    const u2_baseline = { ...LineType };
+    u2_baseline.p1 = getInfiniteLineIntersectionWrapper(u2_leftline, u2_base_markerline);
+    u2_baseline.p2 = getInfiniteLineIntersectionWrapper(u2_rightline, u2_base_markerline);
+    swapLinePointsIfNeeded(u2_baseline);
+    //yantra.appendChild(lLine(u2_baseline,"stroke:purple;stroke-width:2;fill:none"));
+
+    const u2 = { ...TriangleType };
+    u2.p1 = { ...u2_baseline.p1 };
+    u2.p2 = { ...u2_tip };
+    u2.p3 = { ...u2_baseline.p2 };
+    sortTrianglePointsByX(u2);
+    yantra.appendChild(Triangle(u2));
+
+
+    //yantra.appendChild(lLine(u1_rightline));
+    //yantra.appendChild(lLine(u1_base));
+
+
+    //https://youtu.be/CoN54W5nLD4?t=484
+
+    // X marking for D4 base and U3 tip on it.
+    var u2_leftlineAndD1BaseLineIntersection = getInfiniteLineIntersectionWrapper(u2_leftline, d1_base);
+    //yantra.appendChild(pPointSVG(u2_leftlineAndD1BaseLineIntersection,"stroke:brown;stroke-width:10;fill:none"));
+    var u2_rightlineAndU1BaseLineIntersection = getInfiniteLineIntersectionWrapper(u2_rightline, u1_base);
+    //yantra.appendChild(pPointSVG(u2_rightlineAndU1BaseLineIntersection,"stroke:brown;stroke-width:10;fill:none"));  
+    var centerDownSlopeLine = { ...LineType };
+    centerDownSlopeLine.p1 = { ...u2_leftlineAndD1BaseLineIntersection };
+    centerDownSlopeLine.p2 = { ...u2_rightlineAndU1BaseLineIntersection };
+    //yantra.appendChild(lLine(centerDownSlopeLine,"stroke:cyan;stroke-width:2;fill:none"));
+    var u2_leftlineAndU1BaseLineIntersection = getInfiniteLineIntersectionWrapper(u2_leftline, u1_base);
+    //yantra.appendChild(pPointSVG(u2_leftlineAndU1BaseLineIntersection,"stroke:purple;stroke-width:10;fill:none"));
+    var u2_rightlineAndD1BaseLineIntersection = getInfiniteLineIntersectionWrapper(u2_rightline, d1_base);
+    //yantra.appendChild(pPointSVG(u2_rightlineAndD1BaseLineIntersection,"stroke:purple;stroke-width:10;fill:none"));  
+    var centerUpSlopeLine = { ...LineType };
+    centerUpSlopeLine.p1 = { ...u2_leftlineAndU1BaseLineIntersection };
+    centerUpSlopeLine.p2 = { ...u2_rightlineAndD1BaseLineIntersection };
+    //yantra.appendChild(lLine(centerUpSlopeLine,"stroke:cyan;stroke-width:2;fill:none"));
+
+    // Now use above for U4 Base line
+    var U4_base_line = { ...LineType };
+    U4_base_line.p1 = getInfiniteLineIntersectionWrapper(d2_rightline, centerDownSlopeLine);
+    U4_base_line.p2 = getInfiniteLineIntersectionWrapper(d2_leftline, centerUpSlopeLine);
+    swapLinePointsIfNeeded(U4_base_line);
+    //yantra.appendChild(lLine(U4_base_line,"stroke:purple;stroke-width:2;fill:none"));
+
+    //D3 tip is on above line on center
+    const D3_tip = { ...PointType };
+    D3_tip.x = centerX;
+    D3_tip.y = U4_base_line.p1.y;
+    //yantra.appendChild(pPointSVG(D3_tip,"stroke:red;stroke-width:10;fill:none"));
+
+    //D3 left line is from centerDownSlopeLine left point to D3 tip
+    const D3_leftline = { ...LineType };
+    D3_leftline.p1 = { ...centerDownSlopeLine.p1 };
+    D3_leftline.p2 = { ...D3_tip };
+    //yantra.appendChild(lLine(D3_leftline,"stroke:orange;stroke-width:2;fill:none"));
+
+    //D3 right line is from centerUpSlopeLine right point to D3 tip
+    const D3_rightline = { ...LineType };
+    D3_rightline.p1 = { ...centerUpSlopeLine.p2 };
+    D3_rightline.p2 = { ...D3_tip };
+    //yantra.appendChild(lLine(D3_rightline,"stroke:orange;stroke-width:2;fill:none"));
+
+    //D3 triangle construction
+    const D3 = { ...TriangleType };
+    //D3 left point is intersection of D3 left line and d3 base line
+    D3.p1 = getInfiniteLineIntersectionWrapper(D3_leftline, d3_basemarkerline);
+    //D3 right point is intersection of D3 right line and d3 base line
+    D3.p3 = getInfiniteLineIntersectionWrapper(D3_rightline, d3_basemarkerline);
+    D3.p2 = { ...D3_tip };
+    sortTrianglePointsByX(D3);
+    yantra.appendChild(Triangle(D3));
+
+
+    //https://youtu.be/CoN54W5nLD4?t=594
+    //D2 baseLine between intersection points of U1 leftside,D3 Leftside and U1 rightside,D3 Rightside
+    var D2_base_line = { ...LineType };
+    D2_base_line.p1 = getInfiniteLineIntersectionWrapper(u1_leftline, D3_leftline);
+    D2_base_line.p2 = getInfiniteLineIntersectionWrapper(u1_rightline, D3_rightline);
+    swapLinePointsIfNeeded(D2_base_line);
+    //yantra.appendChild(lLine(D2_base_line,"stroke:purple;stroke-width:2;fill:none"));
+
+    //D2 left point is at intersection of D2 left line and D2 base line
+    const D2 = { ...TriangleType };
+    D2.p1 = getInfiniteLineIntersectionWrapper(d2_leftline, D2_base_line);
+    D2.p2 = { ...d2_tip };
+    //D2 right point is at intersection of D2 right line and D2 base line
+    D2.p3 = getInfiniteLineIntersectionWrapper(d2_rightline, D2_base_line);
+    sortTrianglePointsByX(D2);
+    yantra.appendChild(Triangle(D2));
+
+    //U4 triangle construction
+    const U4 = { ...TriangleType };
+    U4.p1 = { ...U4_base_line.p1 };
+    //U4 tip is at center of D2 base line
+    U4.p2 = { x: centerX, y: D2_base_line.p1.y };
+    //U4 right point is reflection of U4 left point about centerX   
+    U4.p3 = { ...reflectPointAboutYAxis(U4_base_line.p1, centerX) };
+    sortTrianglePointsByX(U4);
+    yantra.appendChild(Triangle(U4));
+
+    //D4 Construction https://youtu.be/CoN54W5nLD4?t=658
+    //D4 base line left point is in D3 left line and u4 left line intersection, right point is in D3 right line and U4 right line intersection
+    var D4_base_line = { ...LineType };
+    D4_base_line.p1 = getInfiniteLineIntersectionWrapper(D3_leftline, { p1: U4.p1, p2: U4.p2 });
+    D4_base_line.p2 = getInfiniteLineIntersectionWrapper(D3_rightline, { p1: U4.p2, p2: U4.p3 });
+    swapLinePointsIfNeeded(D4_base_line);
+    //yantra.appendChild(lLine(D4_base_line,"stroke:purple;stroke-width:2;fill:none")); 
+    //D4 left point is intersection u2_leftline and D4 base line and right point is intersection of u2_rightline and D4 base line
+    // D4 tip on center of U2 base line center
+    const D4 = { ...TriangleType };
+    D4.p1 = getInfiniteLineIntersectionWrapper(u2_leftline, D4_base_line);
+    D4.p2 = { x: centerX, y: u2_baseline.p1.y };
+    D4.p3 = getInfiniteLineIntersectionWrapper(u2_rightline, D4_base_line);
+    sortTrianglePointsByX(D4);
+    yantra.appendChild(Triangle(D4));
+
+
+    //D5 construction https://youtu.be/CoN54W5nLD4?t=707
+    //line between D3 left line and U3 left line intersection and D3 right line and U3 right line intersection
+    var D5_base_line = { ...LineType };
+    D5_base_line.p1 = getInfiniteLineIntersectionWrapper(D3_leftline, getTriangleComponent(u3, LeftLine));
+    D5_base_line.p2 = getInfiniteLineIntersectionWrapper(D3_rightline, getTriangleComponent(u3, RightLine));
+    swapLinePointsIfNeeded(D5_base_line);
+    //yantra.appendChild(lLine(D5_base_line,"stroke:purple;stroke-width:2;fill:none"));
+
+    //The D5 base line intersection on U4 left line and U4 right line are the two base points of D5 triangle
+    //The tip of the D5 triangle is center on U1 base line
+    const D5 = { ...TriangleType };
+    D5.p1 = getInfiniteLineIntersectionWrapper(getTriangleComponent(U4, LeftLine), D5_base_line);
+    D5.p2 = { x: centerX, y: u1_base.p1.y };
+    D5.p3 = getInfiniteLineIntersectionWrapper(getTriangleComponent(U4, RightLine), D5_base_line);
+    sortTrianglePointsByX(D5);
+    yantra.appendChild(Triangle(D5));
+
+
+    //Draw 8 petal lotuse around first circle
+    const Circle8Petal = r + r / 3;
+    //Draw circle of radius Circle8Petal
+    const circle8petal = { ...CircleType };
+    circle8petal.circleCenter = { x: centerX, y: centerY };
+    circle8petal.circleRadius = Circle8Petal;
+    const circle8petalSVG = document.createElementNS(svgns, "Circle8Petal");
+    circle8petalSVG.setAttribute("cx", circle8petal.circleCenter.x);
+    circle8petalSVG.setAttribute("cy", circle8petal.circleCenter.y);
+    circle8petalSVG.setAttribute("r", circle8petal.circleRadius);
+    circle8petalSVG.setAttribute("style", "stroke:green;stroke-width:1;fill:none;stroke-dasharray:5,5");
+    yantra.appendChild(circle8petalSVG);
+
+
+
+
+
+    //End of Sri Chakra construction
+    //Drawing Outer Bhupura
+    //https://youtu.be/0eTVHoxqZYM?t=62
+
+}//End of SriChakra function
+
+
+/* function takes a circle(c1), number of petals(n) and petal height(ph) as parameters.
+// The circle is divided into number for parameters 
+//two outer circles are assumed one at r+ph/2 another at r+ph
+// All three circles are divided into n*4 parts
+// Call circles are c1,c2,c3
+// call c1  points c1p[0]....
+///call c2 points as c2p[0]....
+// call c3 points as c3p[0]....
+ 
+fill create svg tags as 
+  <path  fill="none"  stroke="red" 
+      d="M c1p[0].x,c1p[0].y 
+         Q c2p[0].x,c2p[0].y c2p[1].x,c2p[1].y 
+         Q c2p[2].x,c2p[2].y c3p[2].x,c3p[2].y 
+         Q c3p[3].x,c3p[3].y c2p[3].x,c2p[3].y
+         Q c2p[4].x,c2p[4].y c1p[4].x,c1p[4].y //One Petal ends
+         "
+    />
+*/
+function drawPetalSVG(c1, n, ph) {
+    var c2 = { ...c1 };
+    c2.circleRadius = c1.circleRadius + ph;
+    var c3 = { ...c1 };
+    c3.circleRadius = c1.circleRadius + ph / 2;
+    var c1p = [];
+    var c2p = [];
+    var c3p = [];
+    var divisions = n * 4;
+    for (var i = 0; i < divisions + 1; i++) {
+        c1p.push(getPointOnCircleWrapper(c1, (360 / divisions) * i));
+        c2p.push(getPointOnCircleWrapper(c2, (360 / divisions) * i));
+        c3p.push(getPointOnCircleWrapper(c3, (360 / divisions) * i));
+    }
+    // do  below for n petals
+    var path = "M " + c1p[0].x + "," + c1p[0].y;
+    var pointsSVG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    for (i = 0; i < n; i++) {
+        var offset = i * 4;
+        path += "\n Q " + c2p[offset].x + "," + c2p[offset].y + " " + c2p[offset + 1].x + "," + c2p[offset + 1].y;
+        pointsSVG.appendChild(pPointSVG(c2p[offset], "blue"));
+        pointsSVG.appendChild(pPointSVG(c2p[offset + 1], "red"));
+        path += "\n Q " + c2p[offset + 2].x + "," + c2p[offset + 2].y + " " + c3p[offset + 2].x + "," + c2p[offset + 2].y;
+        pointsSVG.appendChild(pPointSVG(c2p[offset + 2], "blue"));
+        pointsSVG.appendChild(pPointSVG(c2p[offset + 2], "red"));
+        path += "\n Q " + c3p[offset + 3].x + "," + c3p[offset + 3].y + " " + c2p[offset + 3].x + "," + c2p[offset + 3].y;
+        pointsSVG.appendChild(pPointSVG(c2p[offset + 3], "blue"));
+        pointsSVG.appendChild(pPointSVG(c2p[offset + 3], "red"));
+        path += "\n Q" + c2p[offset + 4].x + "," + c2p[offset + 4].y + " " + c1p[offset + 4].x + "," + c1p[offset + 4].y;
+        pointsSVG.appendChild(pPointSVG(c2p[offset + 4], "blue"));
+        pointsSVG.appendChild(pPointSVG(c2p[offset + 4], "red"));
+    }
+    var pathSVG = document.createElementNS(svgns, "path");
+    pathSVG.setAttribute("d", path);
+    pathSVG.setAttribute("style", "stroke:red;stroke-width:1;fill:none");
+    pointsSVG.appendChild(pathSVG);
+    return pointsSVG;
+}
+console.log("yantra.js loaded");
