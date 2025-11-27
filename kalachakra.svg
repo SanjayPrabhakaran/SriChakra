@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 406 406" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <bx:export>
+      <bx:file format="png" href="#object-0"/>
+      <bx:file format="png" href="#object-1" path="Untitled 2.png"/>
+      <bx:file format="png" href="#object-2" path="Untitled 3.png"/>
+      <bx:file format="png" href="#object-3" path="Untitled 4.png"/>
+      <bx:file format="png" href="#object-4" path="Untitled 5.png"/>
+      <bx:file format="png" href="#object-5" path="Untitled 6.png"/>
+      <bx:file format="png" href="#object-6" path="Untitled 7.png"/>
+      <bx:file format="png" href="#object-7" path="Untitled 8.png"/>
+      <bx:file format="png" href="#object-8" path="Untitled 9.png"/>
+      <bx:file format="png" href="#object-9" path="Untitled 10.png"/>
+      <bx:file format="png" href="#object-10" path="Untitled 11.png"/>
+      <bx:file format="png" href="#object-11" path="Untitled 12.png"/>
+      <bx:file format="jpeg" href="#object-0"/>
+      <bx:file format="jpeg" href="#object-1" path="Untitled 2.jpeg"/>
+      <bx:file format="jpeg" href="#object-2" path="Untitled 3.jpeg"/>
+      <bx:file format="jpeg" href="#object-3" path="Untitled 4.jpeg"/>
+      <bx:file format="jpeg" href="#object-4" path="Untitled 5.jpeg"/>
+      <bx:file format="jpeg" href="#object-5" path="Untitled 6.jpeg"/>
+      <bx:file format="jpeg" href="#object-6" path="Untitled 7.jpeg"/>
+      <bx:file format="jpeg" href="#object-7" path="Untitled 8.jpeg"/>
+      <bx:file format="jpeg" href="#object-8" path="Untitled 9.jpeg"/>
+      <bx:file format="jpeg" href="#object-9" path="Untitled 10.jpeg"/>
+      <bx:file format="jpeg" href="#object-10" path="Untitled 11.jpeg"/>
+      <bx:file format="jpeg" href="#object-11" path="Untitled 12.jpeg"/>
+      <bx:file format="jpeg" href="#object-0" path="Untitled 13.jpeg"/>
+      <bx:file format="jpeg" href="#object-1" path="Untitled 14.jpeg"/>
+      <bx:file format="jpeg" href="#object-2" path="Untitled 15.jpeg"/>
+      <bx:file format="jpeg" href="#object-3" path="Untitled 16.jpeg"/>
+      <bx:file format="jpeg" href="#object-4" path="Untitled 17.jpeg"/>
+      <bx:file format="jpeg" href="#object-5" path="Untitled 18.jpeg"/>
+      <bx:file format="jpeg" href="#object-6" path="Untitled 19.jpeg"/>
+      <bx:file format="jpeg" href="#object-7" path="Untitled 20.jpeg"/>
+      <bx:file format="jpeg" href="#object-8" path="Untitled 21.jpeg"/>
+      <bx:file format="jpeg" href="#object-9" path="Untitled 22.jpeg"/>
+      <bx:file format="jpeg" href="#object-10" path="Untitled 23.jpeg"/>
+      <bx:file format="jpeg" href="#object-11" path="Untitled 24.jpeg"/>
+    </bx:export>
+  </defs>
+  <line style="fill: rgb(216, 216, 216); stroke: rgb(197, 22, 32); stroke-width: 2px;" x1="5" y1="5" x2="405" y2="405" id="object-0"/>
+  <line style="fill: rgb(216, 216, 216); stroke: rgb(197, 22, 32); stroke-width: 2;" x1="405" y1="5" x2="5" y2="405" id="object-1"/>
+  <line style="fill: rgb(216, 216, 216); stroke: rgb(197, 22, 32); stroke-width: 2;" x1="205" y1="5" x2="205" y2="405" id="object-2"/>
+  <line style="fill: rgb(216, 216, 216); stroke: rgb(197, 22, 32); stroke-width: 2;" x1="5" y1="205" x2="405" y2="205" id="object-3"/>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 28px;" x="242.18" y="195.209" transform="matrix(1, 0, 0, 1, 80, 4)" id="object-4">Indra <tspan x="242.17999267578125" dy="1em">​</tspan>(Surya)</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 28px; transform-box: fill-box; transform-origin: 50% 50%;" x="292.18" y="317.209" transform="matrix(0.707107, 0.707107, -0.707107, 0.707107, 11.00001, 30.000004)" id="object-5">Agni <tspan x="292.17999267578125" dy="1em">​</tspan>(Shukra)</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 28px;" x="174.18" y="407.209" transform="matrix(1, 0, 0, 1, -1, -45)" id="object-6">Yama<tspan x="174.17999267578125" dy="1em">​</tspan>(Mars)</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 28px; transform-box: fill-box; transform-origin: 50% 50%;" x="3.18" y="377.209" transform="matrix(0.707107, -0.707107, 0.707107, 0.707107, -1.000014, -17.999998)" id="object-7">Nirrutti<tspan x="3.180000066757202" dy="1em">​</tspan>(Rahu)</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 28px;" x="12.18" y="198.209" transform="matrix(1, 0, 0, 1, -9, 0)" id="object-8">Varuna<tspan x="12.180000305175781" dy="1em">​</tspan>(Shani)</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 28px; transform-box: fill-box; transform-origin: 50% 50%;" x="12.18" y="27.209" transform="matrix(0.707107, 0.707107, -0.707107, 0.707107, -12.000004, 33)" id="object-9">Vayu<tspan x="12.180000305175781" dy="1em">​</tspan>(Chandra)</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 28px;" x="187.18" y="20.209" id="object-10" transform="matrix(1, 0, 0, 1, -31.000002, 11.000001)">Kubera<tspan x="187.17999267578125" dy="1em">​</tspan> (Budha)</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 28px; transform-box: fill-box; transform-origin: 50% 50%;" x="327.18" y="40.209" transform="matrix(0.707107, -0.707107, 0.707107, 0.707107, -21.999992, 9.000006)" id="object-11">Ishaana<tspan x="327.17999267578125" dy="1em">​</tspan>(Guru)</text>
+  <text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 17px; white-space: pre;" transform="matrix(1, 0, 0, 1, 0, -2)"><tspan x="188.18" y="102.32">1</tspan><tspan x="188.18" dy="1em">​</tspan><tspan>2</tspan><tspan x="188.18" dy="1em">​</tspan><tspan>3</tspan></text>
+  <text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 17px; white-space: pre; transform-box: fill-box; transform-origin: 50% 50%;" transform="matrix(0.707107, 0.707107, -0.707107, 0.707107, 73.273903, 17.500084)" y="102.31999969482422" x="188.17999267578125">6<tspan x="188.17999267578125" dy="1em">​</tspan>5<tspan x="188.17999267578125" dy="1em">​</tspan>4</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 17px;" x="263.187" y="204.32">9, 8. 7</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 17px; transform-box: fill-box; transform-origin: 50% 50%;" x="233.18" y="237.32" transform="matrix(0.707107, 0.707107, -0.707107, 0.707107, 9.999506, 27.0038)">10, 11, 12</text>
+  <text style="fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 17px; white-space: pre;" transform="matrix(1, 0, 0, 1, 19.093443, 191.679993)" y="102.31999969482422" x="188.17999267578125">15,<tspan x="188.17999267578125" dy="1em">​</tspan>14<tspan x="188.17999267578125" dy="1em">​</tspan>13</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 17px; transform-box: fill-box; transform-origin: 50% 50%;" x="92.18" y="292.32" transform="matrix(0.707107, -0.707107, 0.707107, 0.707107, 1.99922, 12.993998)">18,17.16</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 17px; stroke-width: 1;" x="94.563" y="221.82">19,20,21</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 17px; stroke-width: 1;" x="233.18" y="237.32" transform="matrix(0.707107, 0.707107, -0.707107, 0.707107, 96.928787, -204.774658)">24,23,22</text>
+  <text style="white-space: pre; fill: rgb(51, 51, 51); font-family: Arial, sans-serif; font-size: 17px;" x="198.18" y="204.32" transform="matrix(1, 0, 0, 1, -23.000002, -14.000001)">    25<tspan x="198.17999267578125" dy="1em">​</tspan>,<tspan x="198.17999267578125" dy="1em">​</tspan>26,  27</text>
+  <ellipse style="fill: rgb(216, 216, 216); opacity: 0.21; stroke-width: 9px; stroke: rgb(255, 24, 24);" cx="204.68" cy="208.82" rx="33.5" ry="35.5"/>
+</svg>
